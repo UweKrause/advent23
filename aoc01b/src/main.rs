@@ -87,7 +87,6 @@ fn get_calibration_value(line: String) -> i32 {
 fn get_two_digit_number(line: String) -> String {
     let first = get_first_digit(line.clone());
     let last = get_last_digit(line.clone());
-    println!("{line} {first} {last}");
     first + &last   // but why &last?
 }
 
