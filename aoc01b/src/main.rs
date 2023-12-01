@@ -1,3 +1,6 @@
+use std::cmp::{max, min};
+use std::fs::read_to_string;
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -26,7 +29,7 @@ mod tests {
 
     #[test]
     fn test_calibration_value_sum() {
-        assert_eq!(get_calibration_value_sum("src/example"), CALIBRATION_VALUES_SUM);
+        assert_eq!(get_calibration_value_sum("src/example2"), CALIBRATION_VALUES_SUM);
     }
 
     #[test]
@@ -67,29 +70,18 @@ fn main() {
     println!("{sum}")
 }
 
-fn get_calibration_value_sum(_path: &str) -> i32 {
-    // read_to_string(path)
-    //     .unwrap()
-    //     .lines()
-    //     .map(String::from)
-    //     .map(get_calibration_value)
-    //     .sum()
-    281
+fn get_calibration_value_sum(path: &str) -> i32 {
+    read_to_string(path)
+        .unwrap()
+        .lines()
+        .map(String::from)
+        .map(get_calibration_value)
+        .sum()
 }
 
 fn get_calibration_value(line: String) -> i32 {
-    // let digits = get_two_digit_number(line);
-    // digits.parse().unwrap()
-    match line.as_str() {
-        "two1nine" => 29,
-        "eightwothree" => 83,
-        "abcone2threexyz" => 13,
-        "xtwone3four" => 24,
-        "4nineeightseven2" => 42,
-        "zoneight234" => 14,
-        "7pqrstsixteen" => 76,
-        _ => 0
-    }
+    let digits = get_two_digit_number(line);
+    digits.parse().unwrap()
 }
 
 fn get_two_digit_number(line: String) -> String {
@@ -98,38 +90,56 @@ fn get_two_digit_number(line: String) -> String {
     first + &last   // but why &last?
 }
 
+static NUMBERS: [(&str, &str); 9] = [
+    // (number, textual representation),
+    ("1", "one"),
+    ("2", "two"),
+    ("3", "three"),
+    ("4", "four"),
+    ("5", "five"),
+    ("6", "six"),
+    ("7", "seven"),
+    ("8", "eight"),
+    ("9", "nine"),
+];
+
 fn get_first_digit(line: String) -> String {
-    // for c in line.chars() {
-    //     if c.is_numeric() {
-    //         return c.to_string();
-    //     }
-    // }
-    //
-    // // Can I get rid of this? Crash would be ok in this case.
-    // return "".to_string();
-    match line.as_str() {
-        "two1nine" => "2".to_string(),
-        "eightwothree" => "8".to_string(),
-        "abcone2threexyz" => "1".to_string(),
-        "xtwone3four" => "2".to_string(),
-        "4nineeightseven2" => "4".to_string(),
-        "zoneight234" => "1".to_string(),
-        "7pqrstsixteen" => "7".to_string(),
-        _ => "0".to_string()
+    // for every possible number (or its textual representation) check the first occurrence of it.
+    // if this first occurrence is the smallest known occurrence, remember it and the number
+
+    let mut smallest_pos = usize::MAX;
+    let mut smallest_number = "";
+
+    for (number, number_text) in NUMBERS {
+        let pos = min(
+            line.find(number).unwrap_or(usize::MAX),
+            line.find(number_text).unwrap_or(usize::MAX),
+        );
+
+        if pos < smallest_pos {
+            smallest_pos = pos;
+            smallest_number = number;
+        }
     }
+
+    smallest_number.to_string()
 }
 
 fn get_last_digit(line: String) -> String {
-    // let line_reversed = line.chars().rev().collect();
-    // get_first_digit(line_reversed)
-    match line.as_str() {
-        "two1nine" => "9".to_string(),
-        "eightwothree" => "3".to_string(),
-        "abcone2threexyz" => "3".to_string(),
-        "xtwone3four" => "4".to_string(),
-        "4nineeightseven2" => "2".to_string(),
-        "zoneight234" => "4".to_string(),
-        "7pqrstsixteen" => "6".to_string(),
-        _ => "0".to_string()
+    let mut greatest_pos = 0;
+    let mut greatest_number = "";
+
+    for (number, number_text) in NUMBERS {
+        let pos = max(
+            line.rfind(number).unwrap_or(0),
+            line.rfind(number_text).unwrap_or(0),
+        );
+
+        if pos > greatest_pos {
+            greatest_pos = pos;
+            greatest_number = number;
+        }
     }
+
+    greatest_number.to_string()
 }
