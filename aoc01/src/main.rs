@@ -80,6 +80,6 @@ fn get_last_digit(line: String) -> String {
 
 
 fn main() {
-    let sum = get_calibration_value_sum("src/example");
-    println!("{sum}")
+    let sum = get_calibration_value_sum("src/input");
+    println!("{sum}") // 55130
 }
