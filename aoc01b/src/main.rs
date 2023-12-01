@@ -87,6 +87,7 @@ fn get_calibration_value(line: String) -> i32 {
 fn get_two_digit_number(line: String) -> String {
     let first = get_first_digit(line.clone());
     let last = get_last_digit(line.clone());
+    println!("{line} {first} {last}");
     first + &last   // but why &last?
 }
 
@@ -126,20 +127,24 @@ fn get_first_digit(line: String) -> String {
 }
 
 fn get_last_digit(line: String) -> String {
-    // ERROR IS HERE: Should be -1
-    // fails for: "7dvt"
-    let mut greatest_pos = 0;
+    let mut greatest_pos = -1;
     let mut greatest_number = "";
 
     for (number, number_text) in NUMBERS {
-        let pos = max(
-            line.rfind(number).unwrap_or(0),
-            line.rfind(number_text).unwrap_or(0),
-        );
+        let pos_number = line.rfind(number);
+        let pos_number_text = line.rfind(number_text);
 
-        if pos > greatest_pos {
-            greatest_pos = pos;
-            greatest_number = number;
+        if pos_number.is_some() | pos_number_text.is_some() {
+            let pos = max(pos_number, pos_number_text);
+            match pos {
+                Some(pos) => {
+                    if pos as i32 > greatest_pos {
+                        greatest_pos = pos as i32;
+                        greatest_number = number;
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
