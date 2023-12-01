@@ -134,15 +134,11 @@ fn get_last_digit(line: String) -> String {
         let pos_number_text = line.rfind(number_text);
 
         if pos_number.is_some() | pos_number_text.is_some() {
-            let pos = max(pos_number, pos_number_text);
-            match pos {
-                Some(pos) => {
-                    if pos as i32 > greatest_pos {
-                        greatest_pos = pos as i32;
-                        greatest_number = number;
-                    }
-                }
-                _ => {}
+            let pos = max(pos_number, pos_number_text).unwrap() as i32;
+
+            if pos > greatest_pos {
+                greatest_pos = pos;
+                greatest_number = number;
             }
         }
     }
