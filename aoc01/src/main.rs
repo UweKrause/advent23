@@ -42,6 +42,11 @@ mod tests {
     }
 }
 
+fn main() {
+    let sum = get_calibration_value_sum("src/input");
+    println!("{sum}") // 55130
+}
+
 fn get_calibration_value_sum(path: &str) -> i32 {
     read_to_string(path)
         .unwrap()
@@ -76,10 +81,4 @@ fn get_first_digit(line: String) -> String {
 fn get_last_digit(line: String) -> String {
     let line_reversed = line.chars().rev().collect();
     get_first_digit(line_reversed)
-}
-
-
-fn main() {
-    let sum = get_calibration_value_sum("src/input");
-    println!("{sum}") // 55130
 }
