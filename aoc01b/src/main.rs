@@ -66,7 +66,7 @@ mod tests {
 }
 
 fn main() {
-    let sum = get_calibration_value_sum("src/example2");
+    let sum = get_calibration_value_sum("src/input");
     println!("{sum}")
 }
 
@@ -126,6 +126,8 @@ fn get_first_digit(line: String) -> String {
 }
 
 fn get_last_digit(line: String) -> String {
+    // ERROR IS HERE: Should be -1
+    // fails for: "7dvt"
     let mut greatest_pos = 0;
     let mut greatest_number = "";
 
