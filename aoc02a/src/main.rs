@@ -1,3 +1,5 @@
+use std::fs::read_to_string;
+
 #[derive(Debug)]
 struct Game {
     id: u32,
@@ -25,6 +27,21 @@ impl Game {
             rounds: rvec,
         }
     }
+
+    fn possible(&self, bag: &Bag) -> bool {
+        // a Game is possible, iff all Rounds are possible
+        let mut possible = true;
+        for round in &self.rounds {
+            possible = possible && round.possible(&bag);
+        }
+        possible
+
+        // ToDo:
+        // I want to write this as iterator
+        // something like this:
+        // &self.rounds.iter().all(r => r.possible(bag))
+        // how?
+    }
 }
 
 #[derive(Debug)]
@@ -34,7 +51,7 @@ struct Round {
     blue: u32,
 }
 
-impl From<&str> for Round {
+impl Round {
     fn from(s: &str) -> Self {
         let mut red: u32 = 0;
         let mut green: u32 = 0;
@@ -56,9 +73,26 @@ impl From<&str> for Round {
 
         Self { red, green, blue }
     }
+
+    fn possible(&self, bag: &Bag) -> bool {
+        // a round is possible, if the round needs less or equal the amount of cubes in the bag
+        self.red <= bag.red
+            && self.green <= bag.green
+            && self.blue <= bag.blue
+    }
+}
+
+struct Bag {
+    red: u32,
+    green: u32,
+    blue: u32,
 }
 
 fn main() {
-    let g = Game::from("Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green");
-    dbg!(g);
+    let bag = Bag { red: 12, green: 13, blue: 14 };
+
+    for g in read_to_string("src/example").unwrap().lines() {
+        let g = Game::from(g);
+        println!("{:?} {}", g, g.possible(&bag));
+    }
 }
