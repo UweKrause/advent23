@@ -3,14 +3,11 @@ use std::fs::read_to_string;
 fn main() {
     let bag = Bag { red: 12, green: 13, blue: 14 };
 
-    let mut id_sum = 0;
-
-    for game_line in read_to_string("src/input").unwrap().lines() {
-        let game = Game::from(game_line);
-        if game.possible(&bag) {
-            id_sum += game.id;
-        }
-    }
+    let id_sum: u32 = read_to_string("src/input").unwrap().lines()
+        .map(|game_line| Game::from(game_line))
+        .filter(|game| game.possible(&bag))
+        .map(|game| game.id)
+        .sum();
 
     println!("{}", id_sum); // 2207
 }
