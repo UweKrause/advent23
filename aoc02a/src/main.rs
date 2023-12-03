@@ -5,14 +5,14 @@ fn main() {
 
     let mut id_sum = 0;
 
-    for game_line in read_to_string("src/example").unwrap().lines() {
+    for game_line in read_to_string("src/input").unwrap().lines() {
         let game = Game::from(game_line);
         if game.possible(&bag) {
             id_sum += game.id;
         }
     }
 
-    println!("{}", id_sum);
+    println!("{}", id_sum); // 2207
 }
 
 struct Bag {
