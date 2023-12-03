@@ -1,5 +1,20 @@
 use std::fs::read_to_string;
 
+fn main() {
+    let bag = Bag { red: 12, green: 13, blue: 14 };
+
+    for game_line in read_to_string("src/example").unwrap().lines() {
+        let game = Game::from(game_line);
+        println!("{:?} {}", game, game.possible(&bag));
+    }
+}
+
+struct Bag {
+    red: u32,
+    green: u32,
+    blue: u32,
+}
+
 #[derive(Debug)]
 struct Game {
     id: u32,
@@ -7,40 +22,29 @@ struct Game {
 }
 
 impl Game {
-    fn from(s: &str) -> Self {
-        let mut id = 0;
-        let mut rvec: Vec<Round> = Vec::new();
+    fn from(game_as_str: &str) -> Self {
+        let id: u32;
+        let mut rounds: Vec<Round> = Vec::new();
 
         // parse game id
-        let mut gvec: Vec<&str> = s.split(":").collect();
-        let gidvec: Vec<&str> = gvec[0].split_whitespace().collect();
-        id = gidvec[1].parse().unwrap();
+        let line_split: Vec<&str> = game_as_str.split(": ").collect();
+        let line_game = line_split[0];
+        let line_rounds = line_split[1];
+
+        id = line_game.split_whitespace().collect::<Vec<_>>()[1].parse().unwrap();
 
         // extract rounds
-        let v0: Vec<&str> = gvec[1].split(";").collect();
-        for round in v0 {
-            rvec.push(Round::from(round));
+        for round_as_str in line_rounds.split("; ").collect::<Vec<_>>() {
+            rounds.push(Round::from(round_as_str));
         }
 
-        Self {
-            id: id,
-            rounds: rvec,
-        }
+        Self { id, rounds }
     }
 
     fn possible(&self, bag: &Bag) -> bool {
-        // a Game is possible, iff all Rounds are possible
-        let mut possible = true;
-        for round in &self.rounds {
-            possible = possible && round.possible(&bag);
-        }
-        possible
-
-        // ToDo:
-        // I want to write this as iterator
-        // something like this:
-        // &self.rounds.iter().all(r => r.possible(bag))
-        // how?
+        // a Game with a certain Bag is possible, iff all Rounds are possible with this bag
+        self.rounds.iter()
+            .all(|r| r.possible(bag))
     }
 }
 
@@ -52,24 +56,24 @@ struct Round {
 }
 
 impl Round {
-    fn from(s: &str) -> Self {
+    fn from(round_as_string: &str) -> Self {
         let mut red: u32 = 0;
         let mut green: u32 = 0;
         let mut blue: u32 = 0;
 
-        let v: Vec<&str> = s.split(", ").collect();
 
+        for cubes_as_string in round_as_string.split(", ").collect::<Vec<_>>() {
+            let cubes_as_string_split: Vec<_> = cubes_as_string.split_whitespace().collect();
+            let cubes_color: &str = cubes_as_string_split[1];
+            let cubes_count: u32 = cubes_as_string_split[0].parse().unwrap();
 
-        for x in v {
-            let v2: Vec<_> = x.split_whitespace().collect();
-            match v2[1] {
-                "red" => red = v2[0].parse::<u32>().unwrap(),
-                "green" => green = v2[0].parse::<u32>().unwrap(),
-                "blue" => blue = v2[0].parse::<u32>().unwrap(),
+            match cubes_color {
+                "red" => red = cubes_count,
+                "green" => green = cubes_count,
+                "blue" => blue = cubes_count,
                 _ => ()
             }
         }
-
 
         Self { red, green, blue }
     }
@@ -82,17 +86,6 @@ impl Round {
     }
 }
 
-struct Bag {
-    red: u32,
-    green: u32,
-    blue: u32,
-}
 
-fn main() {
-    let bag = Bag { red: 12, green: 13, blue: 14 };
 
-    for g in read_to_string("src/example").unwrap().lines() {
-        let g = Game::from(g);
-        println!("{:?} {}", g, g.possible(&bag));
-    }
-}
+
