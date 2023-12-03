@@ -2,13 +2,13 @@ use std::cmp::{max};
 use std::fs::read_to_string;
 
 fn main() {
-    let power_sum: u32 = read_to_string("src/example").unwrap().lines()
+    let power_sum: u32 = read_to_string("src/input").unwrap().lines()
         .map(|game_line| Game::from(game_line))
         .map(|game| game.minimal_bag())
         .map(|minimal_bag| minimal_bag.power())
         .sum();
 
-    println!("{}", power_sum); // 2286
+    println!("{}", power_sum); // 62241
 }
 
 #[derive(Debug)]
