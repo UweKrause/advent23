@@ -1,26 +1,32 @@
+use std::cmp::{max};
 use std::fs::read_to_string;
 
 fn main() {
-    let bag = Bag { red: 12, green: 13, blue: 14 };
-
-    let id_sum: u32 = read_to_string("src/input").unwrap().lines()
+    let power_sum: u32 = read_to_string("src/example").unwrap().lines()
         .map(|game_line| Game::from(game_line))
-        .filter(|game| game.possible(&bag))
-        .map(|game| game.id)
+        .map(|game| game.minimal_bag())
+        .map(|minimal_bag| minimal_bag.power())
         .sum();
 
-    println!("{}", id_sum); // 2207
+    println!("{}", power_sum); // 2286
 }
 
+#[derive(Debug)]
 struct Bag {
     red: u32,
     green: u32,
     blue: u32,
 }
 
+impl Bag {
+    fn power(&self) -> u32 {
+        self.red * self.green * self.blue
+    }
+}
+
 #[derive(Debug)]
 struct Game {
-    id: u32,
+    _id: u32,
     rounds: Vec<Round>,
 }
 
@@ -41,13 +47,21 @@ impl Game {
             rounds.push(Round::from(round_as_str));
         }
 
-        Self { id, rounds }
+        Self { _id: id, rounds }
     }
 
-    fn possible(&self, bag: &Bag) -> bool {
-        // a Game with a certain Bag is possible, iff all Rounds are possible with this bag
-        self.rounds.iter()
-            .all(|r| r.possible(bag))
+    fn minimal_bag(&self) -> Bag {
+        let mut red = 0;
+        let mut green = 0;
+        let mut blue = 0;
+
+        for round in &self.rounds {
+            red = max(red, round.red);
+            green = max(green, round.green);
+            blue = max(blue, round.blue);
+        }
+
+        Bag { red, green, blue }
     }
 }
 
@@ -79,13 +93,6 @@ impl Round {
         }
 
         Self { red, green, blue }
-    }
-
-    fn possible(&self, bag: &Bag) -> bool {
-        // a round is possible, if the round needs less or equal the amount of cubes in the bag
-        self.red <= bag.red
-            && self.green <= bag.green
-            && self.blue <= bag.blue
     }
 }
 
