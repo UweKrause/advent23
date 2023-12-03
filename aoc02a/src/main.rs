@@ -3,10 +3,16 @@ use std::fs::read_to_string;
 fn main() {
     let bag = Bag { red: 12, green: 13, blue: 14 };
 
+    let mut id_sum = 0;
+
     for game_line in read_to_string("src/example").unwrap().lines() {
         let game = Game::from(game_line);
-        println!("{:?} {}", game, game.possible(&bag));
+        if game.possible(&bag) {
+            id_sum += game.id;
+        }
     }
+
+    println!("{}", id_sum);
 }
 
 struct Bag {
