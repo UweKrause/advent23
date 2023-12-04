@@ -130,12 +130,12 @@ impl Number {
 
 
 fn main() {
-    let engine = Engine::from(read_to_string("src/example").unwrap());
+    let engine = Engine::from(read_to_string("src/input").unwrap());
 
     let pn_sum: u32 = engine.get_numbers().iter()
         .filter(|n| engine.is_part_number(n))
         .map(|n| n.to_digit().unwrap())
         .sum();
 
-    println!("{}", pn_sum); // 4361
+    println!("{}", pn_sum); // 553079
 }
