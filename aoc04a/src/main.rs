@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 use std::fs::read_to_string;
 
-#[derive(Debug)]
+
 struct Card {
-    id: u32,
+    _id: u32,
     numbers_winning: Numbers,
     numbers_you_have: Numbers,
 }
@@ -25,10 +25,10 @@ impl Card {
         let numbers_winning = Numbers::from(split_numbers.next().unwrap());
         let numbers_you_have = Numbers::from(split_numbers.next().unwrap());
 
-        Card { id, numbers_winning, numbers_you_have }
+        Card { _id: id,  numbers_winning, numbers_you_have }
     }
 
-    fn intersection(&self) -> HashSet<u32> {
+    fn numbers_matching(&self) -> HashSet<u32> {
         self.numbers_winning.numbers
             .intersection(&self.numbers_you_have.numbers)
             .map(|i| i.clone())
@@ -36,7 +36,7 @@ impl Card {
     }
 
     fn worth(&self) -> usize {
-        match self.intersection().len() {
+        match self.numbers_matching().len() {
             0 => 0,
             1 => 1,
             x => 2_usize.pow((x - 1) as u32)
@@ -44,7 +44,7 @@ impl Card {
     }
 }
 
-#[derive(Debug)]
+
 struct Numbers {
     numbers: HashSet<u32>,
 }
@@ -60,20 +60,10 @@ impl Numbers {
 
 
 fn main() {
-    let mut worth_sum = 0;
+    let worth_sum: usize = read_to_string("src/input").unwrap().lines()
+        .map(|line| Card::from(line))
+        .map(|c| c.worth())
+        .sum();
 
-    for line in read_to_string("src/example").unwrap().lines() {
-        let card: Card = Card::from(line);
-        println!("{:?} w:{:?} my:{:?} match:{:?} worth:{:?}",
-                 card.id,
-                 card.numbers_winning.numbers,
-                 card.numbers_you_have.numbers,
-                 card.intersection(),
-                 card.worth()
-        );
-
-        worth_sum += card.worth();
-    }
-
-    println!("{}", worth_sum); // 13
+    println!("{}", worth_sum); // 26346
 }
