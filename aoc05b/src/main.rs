@@ -1,22 +1,26 @@
 use std::collections::{BTreeMap};
 use std::fs::read_to_string;
+use std::ops::RangeInclusive;
+use itertools::Itertools;
 
 fn main() {
     let greenhouse: Greenhouse = Greenhouse::from(read_to_string("src/example").unwrap().trim());
 
     let mut lowest: u64 = u64::MAX;
 
-    for seed in greenhouse.seeds {
-        let soil = greenhouse.maps[&0].get_destination(seed);
-        let fertilizer = greenhouse.maps[&1].get_destination(soil);
-        let water = greenhouse.maps[&2].get_destination(fertilizer);
-        let light = greenhouse.maps[&3].get_destination(water);
-        let temperature = greenhouse.maps[&4].get_destination(light);
-        let humidity = greenhouse.maps[&5].get_destination(temperature);
-        let location = greenhouse.maps[&6].get_destination(humidity);
-        // dbg!(seed, soil, fertilizer,water, light, temperature, humidity, location);
+    for seed_range in greenhouse.seed_ranges {
+        for seed in seed_range {
+            let soil = greenhouse.maps[&0].get_destination(seed);
+            let fertilizer = greenhouse.maps[&1].get_destination(soil);
+            let water = greenhouse.maps[&2].get_destination(fertilizer);
+            let light = greenhouse.maps[&3].get_destination(water);
+            let temperature = greenhouse.maps[&4].get_destination(light);
+            let humidity = greenhouse.maps[&5].get_destination(temperature);
+            let location = greenhouse.maps[&6].get_destination(humidity);
+            // dbg!(seed, soil, fertilizer,water, light, temperature, humidity, location);
 
-        lowest = lowest.min(location);
+            lowest = lowest.min(location);
+        }
     }
 
     println!("{}", lowest);
@@ -24,7 +28,7 @@ fn main() {
 
 #[derive(Debug)]
 struct Greenhouse {
-    seeds: Vec<u64>,
+    seed_ranges: Vec<RangeInclusive<u64>>,
     maps: BTreeMap<usize, Map>, // using BtreeMap to preserve (and nicely show) order
 }
 
@@ -42,15 +46,21 @@ impl Greenhouse {
         // _      split_seeds_numbers
         let (_, split_seeds_numbers) = split_seeds.split_once(": ").unwrap();
 
-        //   v  v  v
+        //      v
         // 79 14 55 13
-        // ^^ ^^ ^^ ^^
-        // seeds
-        let seeds: Vec<u64> = split_seeds_numbers
+        // ^^^^^ ^^^^^
+        // |     seed_range[1]
+        // seed_range[0]
+        // (line can contain many more seeds than just two pairs)
+        // Given are seed range start and the length of the range.
+        // The end (inclusive) therefore is start + length
+        let seed_ranges: Vec<RangeInclusive<u64>> = split_seeds_numbers
             .split_whitespace()
-            .map(|x| x.parse().unwrap())
+            .map(|number_str| number_str.parse::<u64>().unwrap())
+            .tuples::<(u64, u64)>()
+            .map(|(start, length)| RangeInclusive::new(start, start + length))// Range start, Range end (start plus length)
             .collect();
-
+    
         //                                     vvvv
         // seed-to-soil map:\n50 98 2\n52 50 48\n\nsoil-to-fertilizer map:\n0 15 37\n [...]
         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -62,7 +72,7 @@ impl Greenhouse {
             maps.insert(i, Map::from(split_maps_map));
         }
 
-        Greenhouse { seeds, maps }
+        Greenhouse { seed_ranges, maps }
     }
 }
 
