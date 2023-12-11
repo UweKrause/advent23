@@ -16,3 +16,6 @@ Cargo.lock
 
 # ignore JetBrains stuff
 .idea/
+
+# ignore input files (sharing/uploading is not allowd!)
+input
