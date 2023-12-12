@@ -3,6 +3,17 @@ use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::num::ParseIntError;
 
+fn main() {
+    let engine = Engine::from(read_to_string("src/input").unwrap());
+
+    let pn_sum: u32 = engine.get_numbers().iter()
+        .filter(|n| engine.is_part_number(n))
+        .map(Number::to_digit).map(Result::unwrap)
+        .sum();
+
+    println!("{}", pn_sum); // 553079
+}
+
 #[derive(Clone, Debug)]
 struct Engine {
     fields: Vec<Vec<char>>,
@@ -126,16 +137,4 @@ impl Number {
         for c in self.chars.clone().into_iter() { number_string.push(c); }
         return number_string.parse();
     }
-}
-
-
-fn main() {
-    let engine = Engine::from(read_to_string("src/input").unwrap());
-
-    let pn_sum: u32 = engine.get_numbers().iter()
-        .filter(|n| engine.is_part_number(n))
-        .map(|n| n.to_digit().unwrap())
-        .sum();
-
-    println!("{}", pn_sum); // 553079
 }
