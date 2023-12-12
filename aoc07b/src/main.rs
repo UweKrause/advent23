@@ -127,17 +127,23 @@ impl Hand {
     }
 
     fn is_five_of_a_kind(cs: &Vec<Card>) -> bool {
-        // Assumes that cards are sorted.
-        // If cards are sorted and all cards are the same,
-        // the first card is equal to the last card.
-        cs[0] == cs[4]
+        cs[0] == cs[1]
+            && cs[1] == cs[2]
+            && cs[2] == cs[3]
+            && cs[3] == cs[4]
+            && cs[4] == cs[0]
     }
 
     fn is_four_of_a_kind(cs: &Vec<Card>) -> bool {
-        // Assumes that cards are sorted
         cs.iter()
-            .tuple_windows()
-            .any(|(w, x, y, z)| w == x && x == y && y == z)
+            .permutations(4)
+            .any(|x| {
+                true
+                    && /*0          */ x[0] == x[1] && x[0] == x[2] && x[0] == x[3]
+                    && x[1] == x[0] /*   1       */ && x[1] == x[2] && x[1] == x[3]
+                    && x[2] == x[0] && x[2] == x[1] /*   2       */ && x[2] == x[3]
+                    && x[3] == x[0] && x[3] == x[1] && x[3] == x[2] /*   3       */
+            })
     }
 
     fn is_full_house(cs: &Vec<Card>) -> bool {
@@ -147,37 +153,36 @@ impl Hand {
     }
 
     fn is_three_of_a_kind(cs: &Vec<Card>) -> bool {
-        // Assumes that cards are sorted!
         cs.iter()
-            .tuple_windows()
-            .any(|(x, y, z)| x == y && y == z)
+            .permutations(3)
+            .any(|x| x[0] == x[1] && x[1] == x[2] && x[2] == x[0])
     }
 
     fn is_two_pair(cs: &Vec<Card>) -> bool {
         // Assumes that cards are sorted!
         // The two cards forming a pair are always next to each other
         // There are two pairs (AA, BB) and any other card (x)
-        // With 5 cards, the x i either
+        // With 5 cards, the x is either:
         (cs[1] == cs[2] && cs[3] == cs[4]) // xAABB in front of the pairs
             || (cs[0] == cs[1] && cs[3] == cs[4]) // AAxBB between the pairs
             || (cs[0] == cs[1] && cs[2] == cs[3]) // AABBx or behind the pairs
     }
 
     fn is_one_pair(cs: &Vec<Card>) -> bool {
-        // Assumes that cards are sorted
         cs.iter()
-            .tuple_windows()
-            .any(|(x, y)| x == y)
+            .permutations(2)
+            .any(|x| x[0] == x[1])
     }
 }
 
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Hash, Debug)]
-enum Card { Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King, Ace }
+#[derive(Ord, PartialOrd, Eq, Copy, Clone, Hash, Debug)]
+enum Card { Joker, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Queen, King, Ace }
 
 impl Card {
     fn from(s: char) -> Self {
         match s {
+            'J' => Joker,
             '2' => Two,
             '3' => Three,
             '4' => Four,
@@ -187,11 +192,34 @@ impl Card {
             '8' => Eight,
             '9' => Nine,
             'T' => Ten,
-            'J' => Jack,
+
             'Q' => Queen,
             'K' => King,
             'A' => Ace,
             _ => panic!()
+        }
+    }
+}
+
+impl PartialEq for Card {
+    fn eq(&self, other: &Self) -> bool {
+        /*
+        !!! DONT COPY THIS !!!
+        This hack works for exactly this problem.
+        I have NO IDEA which consequences this has!
+        Probably some very strange unforeseeable very ugly to debug consequences...
+        !!! DONT COPY THIS !!!
+         */
+        match self {
+            // The joker is considered the same Card as any Card
+            Joker => { true }
+            s => {
+                match other {
+                    // If the other Card is a Joker, considered them the same Card
+                    Joker => { true }
+                    o => { s.cmp(o) == Ordering::Equal }
+                }
+            }
         }
     }
 }
@@ -212,10 +240,9 @@ enum Strength {
 
 #[cfg(test)]
 mod hands {
-    use std::collections::BinaryHeap;
+    use std::collections::{BinaryHeap};
     use std::fs::read_to_string;
-
-    use crate::Hand;
+    use crate::{Hand, Strength};
     use crate::Strength::*;
 
     #[test]
@@ -236,6 +263,9 @@ mod hands {
         assert_ne!(Hand::from("23456"), Hand::from("789TJ"));
 
         // Hands with almost the same cards are not considered equal
+        assert_ne!(Hand::from("2345T"), Hand::from("2345Q"));
+
+        // Hands where one card is swapped with a Joker are not considered equal
         assert_ne!(Hand::from("2345T"), Hand::from("2345J"));
 
         // Hands with the same strength but different cards are not considered equal
@@ -245,6 +275,7 @@ mod hands {
 
     #[test]
     fn strength() {
+        // Normal rules dont change for cases without any Jack/Joker involved
         assert_eq!(Hand::from("AAAAA").strength, FiveOfAKind);
         assert_eq!(Hand::from("AA8AA").strength, FourOfAKind);
         assert_eq!(Hand::from("23332").strength, FullHouse);
@@ -252,6 +283,173 @@ mod hands {
         assert_eq!(Hand::from("23432").strength, TwoPair);
         assert_eq!(Hand::from("A23A4").strength, OnePair);
         assert_eq!(Hand::from("23456").strength, HighCard);
+
+        // Things change, when there is a Joker involved!
+        assert_eq!(Hand::from("QJJQ2").strength, FourOfAKind);
+        assert_eq!(Hand::from("32T3K").strength, OnePair);
+        assert_eq!(Hand::from("KK677").strength, TwoPair);
+        assert_eq!(Hand::from("T55J5").strength, FourOfAKind);
+        assert_eq!(Hand::from("KTJJT").strength, FourOfAKind);
+        assert_eq!(Hand::from("QQQJA").strength, FourOfAKind);
+    }
+
+
+    static FIVES: [&str; 8] = [
+        "KKKKK", "22222",
+        "JKKKK", "KJKKK", "KKJKK", "KKKJK", "KKKKJ",
+        "JJJJJ",
+    ];
+
+    static FOURS: [&str; 10] = [
+        "2KKKK", "K2KKK", "KK2KK", "KKK2K", "KKKK2",
+        "2JKKK",
+        "2KJKK",
+        "2KJJK",
+        "2KJKJ",
+        "2KJJJ",
+    ];
+
+    static FULL_HOUSES: [&str; 5] = [
+        "KKKQQ", "QQKKK",
+        "QQJKK", "KJKQQ",
+        "AAJQQ"
+    ];
+
+    static THREES: [&str; 7] = [
+        "AAA23", "23334", "AA23A", "KKK23",
+        "KKJ23", "AJ5QQ",
+        "KJJ23",
+    ];
+
+    static TWO_PAIRS: [&str; 3] = [
+        "AA3KK", "23344", "44575",
+        // No Joker involved, any Joker is either One Pair or at least ThreeOfAKind
+        // "J2345" (All distinct, but 1 Joker) -> One Pair
+        // "J2245" (One Pair plus one Joker) -> ThreeOfAKind
+    ];
+
+    static ONE_PAIRS: [&str; 3] = [
+        "AA234",
+        "J2345",
+        "J9QKA",
+    ];
+
+    static HIGH_CARDS: [&str; 2] = [
+        "23456",
+        "789TQ",
+    ];
+
+    fn test_positive(expect: Strength, testees: Vec<&str>) {
+        for positive in testees {
+            let hand = Hand::from(positive);
+            assert_eq!(hand.strength, expect, "{:} {:?}", positive, hand.cards)
+        }
+    }
+
+    fn test_negative(expect: Strength, testees: Vec<&str>) {
+        for negative in testees {
+            let hand = Hand::from(negative);
+            assert_ne!(hand.strength, expect, "{:} {:?}", negative, hand.cards)
+        }
+    }
+
+
+    #[test]
+    fn strength_five_of_a_kind() {
+        let expect = FiveOfAKind;
+        test_positive(expect, FIVES.to_vec());
+
+
+        test_negative(expect, FOURS.to_vec());
+        test_negative(expect, FULL_HOUSES.to_vec());
+        test_negative(expect, THREES.to_vec());
+        test_negative(expect, TWO_PAIRS.to_vec());
+        test_negative(expect, ONE_PAIRS.to_vec());
+        test_negative(expect, HIGH_CARDS.to_vec());
+    }
+
+    #[test]
+    fn strength_four_of_a_kind() {
+        let expect = FourOfAKind;
+        test_positive(expect, FOURS.to_vec());
+
+        test_negative(expect, FIVES.to_vec());
+
+        test_negative(expect, FULL_HOUSES.to_vec());
+        test_negative(expect, THREES.to_vec());
+        test_negative(expect, TWO_PAIRS.to_vec());
+        test_negative(expect, ONE_PAIRS.to_vec());
+        test_negative(expect, HIGH_CARDS.to_vec());
+    }
+
+
+    #[test]
+    fn strength_full_house() {
+        let expect = FullHouse;
+        test_positive(expect, FULL_HOUSES.to_vec());
+
+        test_negative(expect, FIVES.to_vec());
+        test_negative(expect, FOURS.to_vec());
+
+        test_negative(expect, THREES.to_vec());
+        test_negative(expect, TWO_PAIRS.to_vec());
+        test_negative(expect, ONE_PAIRS.to_vec());
+        test_negative(expect, HIGH_CARDS.to_vec());
+    }
+
+    #[test]
+    fn strength_three_of_a_kind() {
+        let expect = ThreeOfAKind;
+        test_positive(expect, THREES.to_vec());
+
+        test_negative(expect, FIVES.to_vec());
+        test_negative(expect, FOURS.to_vec());
+        test_negative(expect, FULL_HOUSES.to_vec());
+
+        test_negative(expect, TWO_PAIRS.to_vec());
+        test_negative(expect, ONE_PAIRS.to_vec());
+        test_negative(expect, HIGH_CARDS.to_vec());
+    }
+
+    #[test]
+    fn strength_two_pair() {
+        let expect = TwoPair;
+        test_positive(expect, TWO_PAIRS.to_vec());
+
+        test_negative(expect, FIVES.to_vec());
+        test_negative(expect, FOURS.to_vec());
+        test_negative(expect, FULL_HOUSES.to_vec());
+        test_negative(expect, THREES.to_vec());
+
+        test_negative(expect, ONE_PAIRS.to_vec());
+        test_negative(expect, HIGH_CARDS.to_vec());
+    }
+
+    #[test]
+    fn strength_one_pair() {
+        let expect = OnePair;
+        test_positive(expect, ONE_PAIRS.to_vec());
+
+        test_negative(expect, FIVES.to_vec());
+        test_negative(expect, FOURS.to_vec());
+        test_negative(expect, FULL_HOUSES.to_vec());
+        test_negative(expect, THREES.to_vec());
+        test_negative(expect, TWO_PAIRS.to_vec());
+
+        test_negative(expect, HIGH_CARDS.to_vec());
+    }
+
+    #[test]
+    fn strength_high_card() {
+        let expect = HighCard;
+        test_positive(expect, HIGH_CARDS.to_vec());
+
+        test_negative(expect, FIVES.to_vec());
+        test_negative(expect, FOURS.to_vec());
+        test_negative(expect, FULL_HOUSES.to_vec());
+        test_negative(expect, THREES.to_vec());
+        test_negative(expect, TWO_PAIRS.to_vec());
+        test_negative(expect, ONE_PAIRS.to_vec());
     }
 
     #[test]
@@ -275,10 +473,10 @@ mod hands {
         }
 
         // Hands are sorted on the heap, highest rank first, lowest rank last
+        assert_eq!(hands.pop(), Some(Hand::from("KTJJT")));
         assert_eq!(hands.pop(), Some(Hand::from("QQQJA")));
         assert_eq!(hands.pop(), Some(Hand::from("T55J5")));
         assert_eq!(hands.pop(), Some(Hand::from("KK677")));
-        assert_eq!(hands.pop(), Some(Hand::from("KTJJT")));
         assert_eq!(hands.pop(), Some(Hand::from("32T3K")));
         assert_eq!(hands.pop(), None);
     }
