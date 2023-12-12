@@ -16,9 +16,13 @@ fn main() {
         hands.push(hand.clone());
     }
 
+    let mut total_winnings = 0;
+
     for (rank, hand) in hands.into_sorted_vec().iter().enumerate() {
-        println!("{} {:?}", rank + 1, hand);
+        let rank_value = (rank + 1) as u32;
+        total_winnings += hand.bid * rank_value;
     }
+    println!("{}", total_winnings);
 }
 
 #[derive(Debug, Clone)]
