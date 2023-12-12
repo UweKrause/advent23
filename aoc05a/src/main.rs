@@ -2,7 +2,8 @@ use std::collections::{BTreeMap};
 use std::fs::read_to_string;
 
 fn main() {
-    let greenhouse: Greenhouse = Greenhouse::from(read_to_string("src/input").unwrap().trim());
+    let greenhouse: Greenhouse =
+        Greenhouse::from(read_to_string("src/input").unwrap().trim());
 
     let mut lowest: u64 = u64::MAX;
 
@@ -54,7 +55,8 @@ impl Greenhouse {
         //                                     vvvv
         // seed-to-soil map:\n50 98 2\n52 50 48\n\nsoil-to-fertilizer map:\n0 15 37\n [...]
         // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // split_maps_maps[0]                      split_maps_maps[1]                  ...split_maps_maps[n]
+        // split_maps_maps[0]                      split_maps_maps[1]
+        // ...split_maps_maps[n]
         let split_maps_maps: Vec<&str> = split_maps.split("\n\n").collect();
 
         let mut maps: BTreeMap<usize, Map> = BTreeMap::new();
@@ -69,7 +71,6 @@ impl Greenhouse {
 
 #[derive(Debug)]
 struct Map {
-    _name: String,
     ranges: Vec<Range>,
 }
 
@@ -78,24 +79,20 @@ impl Map {
         //                 vvv
         // seed-to-soil map:\n50 98 2\n52 50 48
         // ^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^
-        let (split_name, split_ranges) = s.split_once(":\n").unwrap();
+        // _                  split_ranges
+        let (_, split_ranges) = s.split_once(":\n").unwrap();
 
-        //             v
-        // seed-to-soil map
-        // ^^^^^^^^^^^^ ^^^
-        // name         _
-        let (_name, _) = split_name.split_once(" ").unwrap();
-        let _name = _name.to_string();
 
         //        vv
         // 50 98 2\n52 50 48
         // ^^^^^^^  ^^^^^^^^
+        // range[0] range[n]
         let mut ranges: Vec<Range> = Vec::new();
         for range in split_ranges.split("\n") {
             ranges.push(Range::from(range))
         }
 
-        Self { _name, ranges }
+        Self { ranges }
     }
 
     fn get_destination(&self, source: u64) -> u64 {
