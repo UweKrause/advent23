@@ -28,7 +28,6 @@ fn main() {
 #[derive(Debug, Clone)]
 struct Hand {
     cards: Vec<Card>,
-    cards_sorted: Vec<Card>,
     strength: Strength,
     bid: u32,
 }
@@ -36,14 +35,14 @@ struct Hand {
 impl PartialEq<Hand> for Hand {
     fn eq(&self, other: &Self) -> bool {
         self.strength == other.strength
-            && self.cards_sorted == other.cards_sorted
+            && self.cards == other.cards
     }
 }
 
 impl Hash for Hand {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.strength.hash(state);
-        self.cards_sorted.hash(state);
+        self.cards.hash(state);
     }
 }
 
@@ -114,7 +113,7 @@ impl Hand {
 
         let bid: u32 = bid_str.parse().unwrap();
 
-        Self { cards, cards_sorted, strength, bid }
+        Self { cards, strength, bid }
     }
 
     fn strength(cards_sorted: Vec<Card>) -> Strength {
@@ -221,10 +220,17 @@ mod hands {
 
     #[test]
     fn parsing() {
-        // Hands are considered equal if they contain the same cards,
-        // independent of input order
-        assert_eq!(Hand::from("KAKA3"), Hand::from("KK3AA"));
-        assert_eq!(Hand::from("KKTTT"), Hand::from("TTTKK"));
+        // Hands (in the game of "Camel Cards") are considered equal
+        // iff they contain the same cards in the same input order
+        assert_eq!(Hand::from("KAKA3"), Hand::from("KAKA3"));
+
+        // For the game of "Camel Cards", the order of cards on the hand is important.
+        // Usually, for other card games, like e.g. poker,
+        // hands with the same cards would have the same value,
+        // independent of the cards order.
+        // That is NOT the case with Camel Cards!
+        assert_ne!(Hand::from("KAKA3"), Hand::from("KK3AA"));
+        assert_ne!(Hand::from("KKTTT"), Hand::from("TTTKK"));
 
         // Hands with different cards are not considered equal
         assert_ne!(Hand::from("23456"), Hand::from("789TJ"));
@@ -250,8 +256,8 @@ mod hands {
 
     #[test]
     fn order() {
-        // 33332 and 2AAAA are both four of a kind hands,
-        // but 33332 is stronger because its first card is stronger.
+        // "33332 and 2AAAA are both four of a kind hands,
+        // but 33332 is stronger because its first card is stronger."
         assert!(Hand::from("33332") > Hand::from("2AAAA"));
 
         // "Similarly, 77888 and 77788 are both a full house,
@@ -268,7 +274,7 @@ mod hands {
             hands.push(Hand::from(hand_str));
         }
 
-        // Hands are on the heap, highest rank first
+        // Hands are sorted on the heap, highest rank first, lowest rank last
         assert_eq!(hands.pop(), Some(Hand::from("QQQJA")));
         assert_eq!(hands.pop(), Some(Hand::from("T55J5")));
         assert_eq!(hands.pop(), Some(Hand::from("KK677")));
