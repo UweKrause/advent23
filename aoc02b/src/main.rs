@@ -3,7 +3,7 @@ use std::fs::read_to_string;
 
 fn main() {
     let power_sum: u32 = read_to_string("src/input").unwrap().lines()
-        .map(|game_line| Game::from(game_line))
+        .map(Game::from)
         .map(|game| game.minimal_bag())
         .map(|minimal_bag| minimal_bag.power())
         .sum();
@@ -26,28 +26,21 @@ impl Bag {
 
 #[derive(Debug)]
 struct Game {
-    _id: u32,
     rounds: Vec<Round>,
 }
 
 impl Game {
     fn from(game_as_str: &str) -> Self {
-        let id: u32;
         let mut rounds: Vec<Round> = Vec::new();
 
-        // parse game id
-        let line_split: Vec<&str> = game_as_str.split(": ").collect();
-        let line_game = line_split[0];
-        let line_rounds = line_split[1];
-
-        id = line_game.split_whitespace().collect::<Vec<_>>()[1].parse().unwrap();
+        let (_, line_rounds) = game_as_str.split_once(": ").unwrap();
 
         // extract rounds
-        for round_as_str in line_rounds.split("; ").collect::<Vec<_>>() {
+        for round_as_str in line_rounds.split("; ") {
             rounds.push(Round::from(round_as_str));
         }
 
-        Self { _id: id, rounds }
+        Self { rounds }
     }
 
     fn minimal_bag(&self) -> Bag {
@@ -78,7 +71,6 @@ impl Round {
         let mut green: u32 = 0;
         let mut blue: u32 = 0;
 
-
         for cubes_as_string in round_as_string.split(", ").collect::<Vec<_>>() {
             let cubes_as_string_split: Vec<_> = cubes_as_string.split_whitespace().collect();
             let cubes_color: &str = cubes_as_string_split[1];
@@ -95,7 +87,3 @@ impl Round {
         Self { red, green, blue }
     }
 }
-
-
-
-
