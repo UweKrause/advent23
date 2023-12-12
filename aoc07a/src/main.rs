@@ -1,21 +1,35 @@
 use std::cmp::Ordering;
+use std::collections::BinaryHeap;
+use std::fs::read_to_string;
 use std::hash::{Hash, Hasher};
+
 use itertools::Itertools;
+
 use Card::*;
+
 use crate::Strength::*;
 
 fn main() {
-    println!("Hello, world!");
+    let mut hands = BinaryHeap::new();
+    for line in read_to_string("src/example").unwrap().lines() {
+        let (hand_str, _bid) = line.split_once(" ").unwrap();
+        let hand = Hand::from(hand_str);
+        hands.push(hand.clone());
+    }
+
+    for (rank, hand) in hands.into_sorted_vec().iter().enumerate() {
+        println!("{} {:?}", rank + 1, hand);
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Hand {
     cards: Vec<Card>,
     cards_sorted: Vec<Card>,
     strength: Strength,
 }
 
-impl PartialEq for Hand {
+impl PartialEq<Hand> for Hand {
     fn eq(&self, other: &Self) -> bool {
         self.strength == other.strength
             && self.cards_sorted == other.cards_sorted
@@ -30,7 +44,7 @@ impl Hash for Hand {
 }
 
 
-impl PartialOrd for Hand {
+impl PartialOrd<Hand> for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // "Hands are primarily ordered based on type;
         // for example, every full house is stronger than any three of a kind."
@@ -52,6 +66,17 @@ impl PartialOrd for Hand {
                 }
             }
             None => { None }
+        }
+    }
+}
+
+impl Eq for Hand {}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.strength.cmp(&other.strength) {
+            Ordering::Equal => { self.cards.cmp(&other.cards) }
+            order_of_not_equal_strength => { order_of_not_equal_strength }
         }
     }
 }
@@ -164,11 +189,15 @@ enum Strength {
     FullHouse,
     FourOfAKind,
     FiveOfAKind,
+
 }
 
 
 #[cfg(test)]
 mod hands {
+    use std::collections::BinaryHeap;
+    use std::fs::read_to_string;
+
     use crate::Hand;
     use crate::Strength::*;
 
@@ -211,5 +240,22 @@ mod hands {
         // but 77888 is stronger because its third card is stronger
         // (and both hands have the same first and second card).
         assert!(Hand::from("77888") > Hand::from("77788"));
+    }
+
+    #[test]
+    fn rank() {
+        let mut hands = BinaryHeap::new();
+        for line in read_to_string("src/example").unwrap().lines() {
+            let (hand_str, _) = line.split_once(" ").unwrap();
+            hands.push(Hand::from(hand_str));
+        }
+
+        // Hands are on the heap, highest rank first
+        assert_eq!(hands.pop(), Some(Hand::from("QQQJA")));
+        assert_eq!(hands.pop(), Some(Hand::from("T55J5")));
+        assert_eq!(hands.pop(), Some(Hand::from("KK677")));
+        assert_eq!(hands.pop(), Some(Hand::from("KTJJT")));
+        assert_eq!(hands.pop(), Some(Hand::from("32T3K")));
+        assert_eq!(hands.pop(), None);
     }
 }
