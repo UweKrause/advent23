@@ -12,8 +12,7 @@ use crate::Strength::*;
 fn main() {
     let mut hands = BinaryHeap::new();
     for line in read_to_string("src/example").unwrap().lines() {
-        let (hand_str, _bid) = line.split_once(" ").unwrap();
-        let hand = Hand::from(hand_str);
+        let hand = Hand::from(line);
         hands.push(hand.clone());
     }
 
@@ -27,6 +26,7 @@ struct Hand {
     cards: Vec<Card>,
     cards_sorted: Vec<Card>,
     strength: Strength,
+    bid: u32,
 }
 
 impl PartialEq<Hand> for Hand {
@@ -83,11 +83,23 @@ impl Ord for Hand {
 
 impl Hand {
     fn from(s: &str) -> Self {
-        assert_eq!(s.len(), 5);
+        let cards_str;
+        let bid_str;
+
+        if s.contains(" ") {
+            let (tmp_cards_str, tmp_bid_str) = s.split_once(" ").unwrap();
+            cards_str = tmp_cards_str;
+            bid_str = tmp_bid_str;
+        } else {
+            cards_str = s;
+            bid_str = "0";
+        }
+
+        assert_eq!(cards_str.len(), 5);
 
         // Cards stay in order of insertion
         let mut cards: Vec<Card> = Vec::new();
-        for c in s.chars() { cards.push(Card::from(c)) }
+        for c in cards_str.chars() { cards.push(Card::from(c)) }
 
         // the strength functions and equality criteria expect their Cards sorted by label
         let mut cards_sorted = cards.clone();
@@ -96,7 +108,9 @@ impl Hand {
 
         let strength = Hand::strength(cards_sorted.clone());
 
-        Self { cards, cards_sorted, strength }
+        let bid: u32 = bid_str.parse().unwrap();
+
+        Self { cards, cards_sorted, strength, bid }
     }
 
     fn strength(cards_sorted: Vec<Card>) -> Strength {
