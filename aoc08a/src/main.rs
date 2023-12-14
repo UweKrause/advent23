@@ -6,17 +6,17 @@ fn main() {
     let (instructions, network)
         = parse_input(read_to_string("src/example2").unwrap());
 
+    let label_start = "AAA";
+    let label_end = "ZZZ";
+
+    let mut instruction_cycle = instructions.chars().cycle();
+
     let mut steps = 0;
+    let mut current = network.get_node_by_label(label_start.to_string());
 
-    let mut last = network.get_by_label("AAA".to_string());
-
-    for direction in instructions.chars().cycle() {
+    while current.name != label_end {
         steps += 1;
-        let current_label = last.unwrap().get_by_direction(direction);
-        last = network.get_by_label(current_label);
-        if last.unwrap().name == "ZZZ" {
-            break;
-        }
+        current = network.get_node_by_label(current.get_label_by_direction(instruction_cycle.next().unwrap()));
     }
 
     println!("{}", steps);
@@ -25,7 +25,6 @@ fn main() {
 fn parse_input(s: String) -> (String, Network) {
     let (input_instructions, input_nodes)
         = s.split_once("\n").unwrap();
-
 
     let instructions = input_instructions.to_string();
     let network = Network::from(input_nodes.trim());
@@ -45,18 +44,18 @@ impl Network {
         let mut network = Self::new();
 
         for node in s.split("\n") {
-            network.push(Node::from(node))
+            network.insert(Node::from(node))
         }
 
         network
     }
 
-    fn push(&mut self, node: Node) {
+    fn insert(&mut self, node: Node) {
         self.nodes.insert((&node.name).to_string(), node);
     }
 
-    fn get_by_label(&self, label: String) -> Option<&Node> {
-        self.nodes.get(&label)
+    fn get_node_by_label(&self, label: String) -> &Node {
+        self.nodes.get(&label).unwrap()
     }
 }
 
@@ -68,18 +67,18 @@ struct Node {
 }
 
 impl Node {
-    fn from(node_string: &str) -> Self {
+    fn from(node_str: &str) -> Self {
         Self {
-            name: node_string[0..=2].to_string(),
-            left: node_string[7..=9].to_string(),
-            right: node_string[12..=14].to_string(),
+            name: node_str[0..=2].to_string(),
+            left: node_str[7..=9].to_string(),
+            right: node_str[12..=14].to_string(),
         }
     }
 
-    fn get_by_direction(&self, direction: char) -> String {
+    fn get_label_by_direction(&self, direction: char) -> String {
         match direction {
-            'L' => self.left.to_string(),
-            'R' => self.right.to_string(),
+            'L' => self.left.clone(),
+            'R' => self.right.clone(),
             _ => panic!()
         }
     }
