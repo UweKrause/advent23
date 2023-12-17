@@ -4,22 +4,30 @@ use std::fs::read_to_string;
 
 fn main() {
     let (instructions, network)
-        = parse_input(read_to_string("src/example2").unwrap());
-
-    let label_start = "AAA";
-    let label_end = "ZZZ";
+        = parse_input(read_to_string("src/example3").unwrap());
 
     let mut instruction_cycle = instructions.chars().cycle();
 
-    let mut steps = 0;
-    let mut current = network.get_node_by_label(label_start.to_string());
+    let mut step = 0;
+    let mut current: Vec<Node> = network.nodes_start.clone();
 
-    while current.name != label_end {
-        steps += 1;
-        current = network.get_node_by_label(current.get_label_by_direction(instruction_cycle.next().unwrap()));
+    println!("{} {:?}", step, current);
+
+    while current != network.nodes_end {
+        step += 1;
+        let instruction = instruction_cycle.next().unwrap();
+
+        let mut next = Vec::new();
+        for node in current {
+            let x = network.get_node_by_label(node.get_label_by_direction(instruction));
+            next.push(x);
+        }
+
+        current = next;
+        println!("{} {} {:?}", step, instruction, current);
     }
 
-    println!("{}", steps);
+    println!("{}", step);
 }
 
 fn parse_input(s: String) -> (String, Network) {
@@ -35,10 +43,18 @@ fn parse_input(s: String) -> (String, Network) {
 #[derive(Debug)]
 struct Network {
     nodes: HashMap<String, Node>,
+    nodes_start: Vec<Node>,
+    nodes_end: Vec<Node>,
 }
 
 impl Network {
-    fn new() -> Self { Self { nodes: HashMap::new() } }
+    fn new() -> Self {
+        Self {
+            nodes: HashMap::new(),
+            nodes_start: Vec::new(),
+            nodes_end: Vec::new(),
+        }
+    }
 
     fn from(s: &str) -> Self {
         let mut network = Self::new();
@@ -51,15 +67,19 @@ impl Network {
     }
 
     fn insert(&mut self, node: Node) {
-        self.nodes.insert((&node.name).to_string(), node);
+        self.nodes.insert(node.name.to_string(), node.clone());
+
+        if node.is_start_node() { self.nodes_start.push(node.clone()); }
+        if node.is_end_node() { self.nodes_end.push(node.clone()); }
     }
 
-    fn get_node_by_label(&self, label: String) -> &Node {
-        self.nodes.get(&label).unwrap()
+    fn get_node_by_label(&self, label: String) -> Node {
+        self.nodes.get(&label).unwrap().to_owned()
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+#[derive(PartialEq)]
 struct Node {
     name: String,
     left: String,
@@ -82,6 +102,10 @@ impl Node {
             _ => panic!()
         }
     }
+
+    fn is_start_node(&self) -> bool { self.name.ends_with("A") }
+
+    fn is_end_node(&self) -> bool { self.name.ends_with("Z") }
 }
 
 
