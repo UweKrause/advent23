@@ -5,13 +5,9 @@ use crate::Direction::{East, North, South, West};
 fn main() {
     let grid = Grid::from(read_to_string("src/example2").unwrap());
 
-    for x in 0..grid.size() {
-        for y in 0..grid.size() {
-            println!("{:?}", grid.get(x, y))
-        }
-    }
+    println!("{:?}", &grid.connections_by_position(grid.start.x, grid.start.y));
 
-    println!("{:?}", grid.connections_by_position(grid.start.x, grid.start.y));
+    dbg!(grid.get_neighbours(grid.start.clone()));
 }
 
 #[derive(Debug)]
@@ -42,6 +38,11 @@ impl Grid {
 
             grid.tiles.insert(x, row);
         }
+
+        grid.start.connects.append(&mut grid.connections_by_position(
+            grid.start.x,
+            grid.start.y,
+        ));
 
         grid
     }
@@ -102,6 +103,26 @@ impl Grid {
 
     fn get(&self, x: usize, y: usize) -> Tile {
         self.tiles.get(&x).unwrap().get(&y).unwrap().to_owned()
+    }
+
+    fn get_neighbours(&self, tile: Tile) -> Vec<Tile> {
+        let mut neighbours = Vec::new();
+
+        let x = tile.x;
+        let y = tile.y;
+
+        dbg!(&tile.connects);
+
+        for connects in tile.connects {
+            match connects {
+                North => neighbours.push(self.get(x - 1, y)),
+                South => neighbours.push(self.get(x + 1, y)),
+                East => neighbours.push(self.get(x, y + 1)),
+                West => neighbours.push(self.get(x, y - 1)),
+            }
+        }
+
+        neighbours
     }
 }
 
