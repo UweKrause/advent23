@@ -3,11 +3,53 @@ use std::fs::read_to_string;
 use crate::Direction::{East, North, South, West};
 
 fn main() {
-    let grid = Grid::from(read_to_string("src/example2").unwrap());
+    let grid: Grid = read_to_string("src/example2").unwrap().into();
 
-    println!("{:?}", &grid.connections_by_position(grid.start.x, grid.start.y));
+    let mut way_left = HashMap::new();
+    let mut way_right = HashMap::new();
 
-    dbg!(grid.get_neighbours(grid.start.clone()));
+    // both ways start with the start
+    let mut step = 0;
+    way_left.insert(step, grid.start.clone());
+    way_right.insert(step, grid.start.clone());
+
+    // find neighbors of the start
+    step += 1;
+
+    let x = grid.get_neighbors(&grid.start);
+
+    let mut left_next = x[0].clone();
+    let mut right_next = x[1].clone();
+
+    way_left.insert(1, left_next.clone());
+    way_right.insert(1, right_next.clone());
+
+    // follow the rest of the ways,
+    // until the ways meet at the end
+    while left_next != right_next {
+        step += 1;
+
+        // follow left way
+        let left_current_neighbors = grid.get_neighbors(&way_left[&(step - 1)]);
+        for neighbor in left_current_neighbors {
+            if neighbor != way_left[&(step - 2)] && neighbor.char != 'S' {
+                left_next = neighbor;
+            }
+        }
+        way_left.insert(step, left_next.clone());
+
+        // follow right way
+        let right_current_neighbors = grid.get_neighbors(&way_right[&(step - 1)]);
+        for neighbor in right_current_neighbors {
+            if neighbor != way_right[&(step - 2)] && neighbor.char != 'S' {
+                right_next = neighbor;
+            }
+        }
+        way_right.insert(step, right_next.clone());
+    }
+
+    assert_eq!(way_left.len(), way_right.len());
+    println!("{}", step);
 }
 
 #[derive(Debug)]
@@ -16,18 +58,20 @@ struct Grid {
     start: Tile,
 }
 
-impl Grid {
-    fn new() -> Self {
-        let tiles = HashMap::new();
-        let start = Tile::new();
-        Self { tiles, start }
-    }
-
+impl From<String> for Grid {
     fn from(s: String) -> Self {
         let mut grid = Grid::new();
 
+        /* example2:
+        -L|F7
+        7S-7|
+        L|7||
+        -L-J|
+        L|-JF
+         */
         for (x, input_row) in s.trim().split("\n").enumerate() {
             let mut row = HashMap::new();
+            // "-L|F7"
             for (y, char) in input_row.chars().enumerate() {
                 let connects = Grid::connections_by_char(char);
                 let tile = Tile { x, y, char, connects };
@@ -46,6 +90,15 @@ impl Grid {
 
         grid
     }
+}
+
+impl Grid {
+    fn new() -> Self {
+        let tiles = HashMap::new();
+        let start = Tile::new();
+        Self { tiles, start }
+    }
+
 
     fn connections_by_char(char: char) -> Vec<Direction> {
         /*
@@ -87,11 +140,6 @@ impl Grid {
         connections
     }
 
-    fn size(&self) -> usize {
-        assert_eq!(self.width(), self.height());
-        self.width()
-    }
-
     fn height(&self) -> usize {
         self.tiles.len()
     }
@@ -105,24 +153,22 @@ impl Grid {
         self.tiles.get(&x).unwrap().get(&y).unwrap().to_owned()
     }
 
-    fn get_neighbours(&self, tile: Tile) -> Vec<Tile> {
-        let mut neighbours = Vec::new();
+    fn get_neighbors(&self, tile: &Tile) -> Vec<Tile> {
+        let mut neighbors = Vec::new();
 
-        let x = tile.x;
-        let y = tile.y;
+        let (x, y) = (tile.x, tile.y);
 
-        dbg!(&tile.connects);
-
-        for connects in tile.connects {
+        for connects in &tile.connects {
             match connects {
-                North => neighbours.push(self.get(x - 1, y)),
-                South => neighbours.push(self.get(x + 1, y)),
-                East => neighbours.push(self.get(x, y + 1)),
-                West => neighbours.push(self.get(x, y - 1)),
+                North => neighbors.push(self.get(x - 1, y)),
+                South => neighbors.push(self.get(x + 1, y)),
+                East => neighbors.push(self.get(x, y + 1)),
+                West => neighbors.push(self.get(x, y - 1)),
             }
         }
 
-        neighbours
+        assert_eq!(neighbors.len(), 2);
+        neighbors
     }
 }
 
@@ -136,7 +182,10 @@ struct Tile {
 }
 
 impl Tile {
-    fn new() -> Self { Self { x: 0, y: 0, char: '.', connects: vec![] } }
+    fn new() -> Self {
+        // this might crash when a Tile really is on x:0,y:0
+        Self { x: 0, y: 0, char: '.', connects: vec![] }
+    }
 
     fn connects_to(&self, direction: Direction) -> bool {
         self.connects.contains(&direction)
