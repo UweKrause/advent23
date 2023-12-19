@@ -11,8 +11,7 @@ fn main() {
             // "Game 50: 9 red; 5 green, 2 blue, 10 red; 5 red, 1 green\n"
             .map(Game::from)
             .filter(|game| game.possible(&bag))
-            .map(|game| game.id)
-            .sum::<u32>();
+            .fold(0, |acc, game| acc + game.id);
 
     println!("{}", id_sum);
 }
@@ -89,7 +88,8 @@ impl From<&str> for Round {
         //        vv      vv
         // 5 green, 2 blue, 10 red
         // ^^^^^^^  ^^^^^^  ^^^^^^
-        // cube[0]  cube[1] cube[n]  ...
+        // |        |       cubes[n] ...
+        // cubes[0] cubes[1]
         for cube in line_round.split(", ").collect::<Vec<_>>() {
 
             //  v
